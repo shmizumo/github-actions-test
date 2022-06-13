@@ -18,9 +18,9 @@ jobs:
         id: get-issue
         uses: octokit/request-action@v2.x
         with:
-          route: GET /repos/:repository/pulls/:issue_id
+          route: GET /repos/:repository/pulls/:pr_number/reviews
           repository: ${{ github.repository }}
-          issue_id: ${{ github.event.issue.number }}
+          pr_number: ${{ github.event.issue.number }}
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - run: "echo revews data: ${{ steps.get-issue.outputs.data }}"
