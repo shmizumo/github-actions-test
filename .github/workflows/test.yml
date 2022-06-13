@@ -1,0 +1,15 @@
+name: test
+on:
+  issue_comment:
+    types: [created]
+    
+jobs:
+  build:
+    if: contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, 'test this please')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug(check event object)
+        run: |
+          cat << OBJECT
+          ${{ toJson(github) }}
+          OBJECT
