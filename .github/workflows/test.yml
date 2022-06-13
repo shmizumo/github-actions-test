@@ -13,4 +13,3 @@ jobs:
           cat << OBJECT
           ${{ toJson(github) }}
           OBJECT
-          curl ${{ github.issue.pull_request.url }}
