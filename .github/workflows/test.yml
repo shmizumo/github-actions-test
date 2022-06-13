@@ -5,16 +5,10 @@ on:
     
 jobs:
   build:
-    if: contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, 'test this please')
+    if: contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, '/create-canary-image')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: Debug(check event object)
-        run: |
-          cat << OBJECT
-          ${{ toJson(github) }}
-          OBJECT
-      - name: get_reviews from comment
+      - name: get reviews info from pr_number
         id: get_reviews
         uses: octokit/request-action@v2.x
         with:
@@ -23,8 +17,65 @@ jobs:
           pr_number: ${{ github.event.issue.number }}
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-      - name: Debug(reviews)
+      - name: check approver
+        uses: actions/github-script@v6
+        env:
+          REVIEWS: "${{steps.get_reviews.outputs.data}}"
+        with:
+          script: |
+            const obj = JSON.parse(process.env.REVIEWS)
+            let verify = 0;
+            for (const i in obj) {
+              console.log(obj[i])
+              if (obj[i].state === "APPROVED" && obj[i].user.login === "shmizumo") {
+                core.info("Approved by shmizumo");
+                verify = 1;
+              }
+            }
+            
+            if (verify == 0) {
+              core.setFailed('Not approved by shmizumo')
+            }
+      - name: failure comment 
+        if: ${{ failure() }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Not approved by shmizumo"
+            })
+            return 'stop';
+
+      - name: "Get branch name and sha"
+        id: get_branch
         run: |
-          cat << OBJECT
-          ${{ toJson(steps.get_reviews.outputs.data) }}
-          OBJECT
+          PR=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" ${{ github.event.issue.pull_request.url }})
+          echo "::set-output name=branch::$(echo $PR | jq -r '.head.ref')"
+          echo "::set-output name=sha::$(echo $PR | jq -r '.head.sha')"
+      - name: "Checkout"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.get_branch.outputs.branch }}
+          fetch-depth: 0
+      - name: Automatic Rebase
+        uses: cirrus-actions/rebase@1.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # docker build
+      - name: success comment(image:name)
+        uses: actions/github-script@v6
+        env:
+          REVIEWS: "${{steps.get_reviews.outputs.data}}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "hoge"
+            })
