@@ -14,8 +14,8 @@ jobs:
           cat << OBJECT
           ${{ toJson(github) }}
           OBJECT
-      - name: get issue from comment
-        id: get-issue
+      - name: get_reviews from comment
+        id: get_reviews
         uses: octokit/request-action@v2.x
         with:
           route: GET /repos/:repository/pulls/:pr_number/reviews
@@ -23,4 +23,8 @@ jobs:
           pr_number: ${{ github.event.issue.number }}
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-      - run: "echo revews data: ${{ steps.get-issue.outputs.data }}"
+      - name: Debug(reviews)
+        run: |
+          cat << OBJECT
+          ${{ toJson(steps.get_reviews.outputs.data) }}
+          OBJECT
