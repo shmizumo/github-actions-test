@@ -9,14 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      # Find the PR associated with this push, if there is one.
-      - uses: jwalton/gh-find-current-pr@v1
-        id: findPr
       - name: Debug(check event object)
         run: |
           cat << OBJECT
           ${{ toJson(github) }}
           OBJECT
-          cat << OBJECT
-          ${{ toJson(steps.findPr.outputs) }}
-          OBJECT
+      - uses: octokit/request-action@v2.x
+        id: get_pulls_approver
+        with:
+          route: GET /repos/{owner}/{repo}/pulls/{number}/reviews
+          owner: octokit
+          repo: request-action
+          number: ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: "echo revews data: ${{ steps.get_latest_release.outputs.data }}"
