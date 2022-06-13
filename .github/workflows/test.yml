@@ -17,9 +17,7 @@ jobs:
       - uses: octokit/request-action@v2.x
         id: get_pulls_approver
         with:
-          route: GET /repos/{owner}/{repo}/pulls/{number}/reviews
-          owner: octokit
-          repo: request-action
+          route: GET /repos/shmizumo/github-actions-test/pulls/{number}/reviews
           number: ${{ github.event.issue.number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
